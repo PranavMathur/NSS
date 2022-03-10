@@ -9,12 +9,17 @@ grammar = """
 
 rule: selector "{" block "}"
 
-selector: NAME
+selector: /[a-z]+/i
 
 block: declaration*
 
 declaration: rule
-           | NAME ":" NAME ";"
+           | property ":" value ";"
+
+property: /[a-z-]+/i
+
+value: NAME
+     | /#[a-f0-9]+/i -> rgb
 
 %import common.NUMBER
 %import common.ESCAPED_STRING
@@ -26,6 +31,8 @@ declaration: rule
 
 %ignore WS_INLINE
 %ignore WS
+%ignore C_COMMENT
+%ignore CPP_COMMENT
 """
 
 def main():
@@ -36,7 +43,11 @@ def main():
     args = cli_parser.parse_args()
 
     parser = lark.Lark(grammar, parser='lalr')
-    tree = parser.parse(args.source.read())
+    try:
+        tree = parser.parse(args.source.read())
+    except lark.exceptions.LarkError as e:
+        print(e)
+        exit(1)
     print(tree.pretty())
 
 if __name__ == '__main__':
